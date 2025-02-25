@@ -248,6 +248,75 @@ class _Data:
         self.__dict__ = state
 
 
+class _MultiAssetData:
+    """
+    A multi-asset data accessor. Provides access to multiple assets' OHLCV data.
+    Each asset's data can be accessed by its symbol.
+    """
+    def __init__(self, data_dict: Dict[str, pd.DataFrame]):
+        """
+        Initialize with a dictionary of DataFrames, one for each asset.
+        
+        Parameters:
+        -----------
+        data_dict : Dict[str, pd.DataFrame]
+            Dictionary mapping asset symbols to their respective OHLCV DataFrames.
+            All DataFrames must have the same index.
+        """
+        # Validate that all dataframes have the same index
+        if len(data_dict) > 1:
+            first_index = next(iter(data_dict.values())).index
+            for symbol, df in data_dict.items():
+                if not df.index.equals(first_index):
+                    raise ValueError(f"All assets must have the same index. Asset {symbol} has a different index.")
+        
+        self.__data_dict = {symbol: _Data(df) for symbol, df in data_dict.items()}
+        self.__symbols = list(data_dict.keys())
+        self.__current_len = min(len(df) for df in data_dict.values()) if data_dict else 0
+        
+    def __getitem__(self, symbol):
+        """Get data for a specific asset by its symbol."""
+        if symbol not in self.__data_dict:
+            raise KeyError(f"Asset symbol '{symbol}' not found in data")
+        return self.__data_dict[symbol]
+    
+    def __getattr__(self, symbol):
+        """Access asset data as attributes."""
+        try:
+            return self.__data_dict[symbol]
+        except KeyError:
+            raise AttributeError(f"Asset symbol '{symbol}' not found in data") from None
+    
+    def _set_length(self, length):
+        """Set the current length of data to be used."""
+        self.__current_len = length
+        for data in self.__data_dict.values():
+            data._set_length(length)
+    
+    def __repr__(self):
+        return f"<MultiAssetData symbols={self.__symbols}>"
+    
+    def __len__(self):
+        return self.__current_len
+    
+    @property
+    def symbols(self) -> List[str]:
+        """Get list of available asset symbols."""
+        return self.__symbols
+    
+    @property
+    def index(self):
+        """Get the common index for all assets."""
+        if not self.__symbols:
+            return pd.DatetimeIndex([])
+        return self.__data_dict[self.__symbols[0]].index
+    
+    @property
+    def df(self) -> Dict[str, pd.DataFrame]:
+        """Get dictionary of all asset DataFrames."""
+        return {symbol: data.df for symbol, data in self.__data_dict.items()}
+
+
 if sys.version_info >= (3, 13):
     SharedMemory = _mpshm.SharedMemory
 else:
