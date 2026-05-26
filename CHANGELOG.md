@@ -36,7 +36,7 @@ These were the major changes contributing to each release:
 
 * Enhancements:
   * `backtesting.lib.TrailingStrategy` supports setting trailing stop-loss by percentage.
-  * [`backtesting.lib.MultiBacktest`](https://kernc.github.io/backtesting.py/doc/backtesting/lib.html#backtesting.lib.MultiBacktest)
+  * [`backtesting.lib.MultiBacktest`](docs/api/lib.md#multibacktest)
     multi-dataset backtesting wrapper.
   * `Backtest.run()` wrapped in `tqdm()`
   * Rename parameter `lib.FractionalBacktest(fractional_unit=)`.
@@ -65,7 +65,7 @@ These were the major changes contributing to each release:
 
 * Enhancements:
   * Grid optimization with mp.Pool & mp.shm.SharedMemory (#1222)
-  * [`backtesting.lib.FractionalBacktest`](https://kernc.github.io/backtesting.py/doc/backtesting/lib.html#backtesting.lib.FractionalBacktest)
+  * [`backtesting.lib.FractionalBacktest`](docs/api/lib.md#fractionalbacktest)
     that supports fractional trading
   * `backtesting.__all__` for better `from backtesting import *` and suggestions
 * Bugs fixed:
@@ -141,10 +141,10 @@ affecting other platforms too much.
 ### 0.3.2
 (2021-08-03)
 
-* New strategy performance method [`backtesting.lib.compute_stats`](https://kernc.github.io/backtesting.py/doc/backtesting/lib.html#backtesting.lib.compute_stats) (#281)
+* New strategy performance method [`backtesting.lib.compute_stats`](docs/api/stats.md#recomputing-stats) (#281)
 * Improve plotting speed (#329) and optimization performance (#295) on large datasets.
 * Commission constraints now allow for market-maker's rebates.
-* [`Backtest.plot`](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#backtesting.backtesting.Backtest.plot)
+* [`Backtest.plot`](docs/api/plotting.md#backtestplot)
   now returns the bokeh figure object for further processing.
 * Other small bugs and fixes.
 
@@ -159,8 +159,8 @@ affecting other platforms too much.
 ### 0.3.0
 (2020-11-24)
 
-* Faster [model-based optimization](https://kernc.github.io/backtesting.py/doc/examples/Parameter%20Heatmap%20&amp;%20Optimization.html#Model-based-optimization) using scikit-optimize (#154)
-* Optionally faster [optimization](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#backtesting.backtesting.Backtest.optimize) by randomized grid search (#154)
+* Faster [model-based optimization](docs/guides/optimization.md#model-based-optimization) using scikit-optimize (#154)
+* Optionally faster [optimization](docs/guides/optimization.md) by randomized grid search (#154)
 * _Annualized_ Return/Volatility/Sharpe/Sortino/Calmar stats (#156)
 * Auto close open trades on backtest finish
 * Add `Backtest.plot(plot_return=)`, akin to `plot_equity=`
@@ -170,7 +170,7 @@ affecting other platforms too much.
 ### 0.2.4
 (2020-10-27)
 
-* Add [`lib.random_ohlc_data()`](https://kernc.github.io/backtesting.py/doc/backtesting/lib.html#backtesting.lib.random_ohlc_data) OHLC data generator
+* Add [`lib.random_ohlc_data()`](docs/api/lib.md#random-ohlc-data) OHLC data generator
 * Aggregate Equity on 'last' when plot resampling
 * Update stats calculation for Buy & Hold to be long-only (#152)
 
@@ -190,7 +190,7 @@ affecting other platforms too much.
 ### 0.2.1
 (2020-08-03)
 
-* Add [`Trade.entry_time/.exit_time`](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#backtesting.backtesting.Trade)
+* Add [`Trade.entry_time/.exit_time`](docs/api/orders-trades.md#trade)
 * Handle SL/TP hit on the same day the position was opened
 
 
@@ -198,7 +198,7 @@ affecting other platforms too much.
 (2020-07-15)
 
 * New Order/Trade/Position API (#47)
-* Add data pandas accessors [`.df` and `.s`](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#backtesting.backtesting.Strategy.data)
+* Add data pandas accessors [`.df` and `.s`](docs/api/strategy.md#data-access)
 * Add `Backtest(..., exclusive_orders=)` that closes previous trades on new orders
 * Add `Backtest(..., hedging=)` that makes FIFO trade closing optional
 * Add `bt.plot(reverse_indicators=)` param

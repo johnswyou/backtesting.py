@@ -56,12 +56,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 3
-      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - run: pip install -e .[doc,test]  # -e provides ./backtesting/_version.py for pdoc
-      - run: time doc/build.sh
+          python-version: '3.13'
+      - uses: actions/checkout@v4
+      - run: pip install -U .[test]
+      - run: python -m unittest backtesting.test._test.TestDocs
 
   win64:
     needs:

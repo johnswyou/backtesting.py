@@ -32,13 +32,6 @@ from ._util import (
     _symbol_from_symbols, patch, try_, _tqdm,
 )
 
-__pdoc__ = {
-    'Strategy.__init__': False,
-    'Order.__init__': False,
-    'Position.__init__': False,
-    'Trade.__init__': False,
-}
-
 
 class Strategy(metaclass=ABCMeta):
     """
@@ -582,8 +575,6 @@ class Order:
         of this order and the associated `Trade` (see `Trade.tag`).
         """
         return self.__tag
-
-    __pdoc__['Order.parent_trade'] = False
 
     # Extra properties
 
@@ -1458,7 +1449,7 @@ class Backtest:
         fractional units (of e.g. bitcoin).
 
     [FIFO]: https://www.investopedia.com/terms/n/nfa-compliance-rule-2-43b.asp
-    [active and ongoing]: https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html#backtesting.backtesting.Strategy.trades
+    [active and ongoing]: ../../docs/api/strategy.md#runtime-properties
     """  # noqa: E501
     def __init__(self,
                  data: pd.DataFrame,

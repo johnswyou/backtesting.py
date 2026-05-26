@@ -6,9 +6,7 @@ Intended for simple missing-link procedures, not reinventing
 of better-suited, state-of-the-art, fast libraries,
 such as TA-Lib, Tulipy, PyAlgoTrade, NumPy, SciPy ...
 
-Please raise ideas for additions to this collection on the [issue tracker].
-
-[issue tracker]: https://github.com/kernc/backtesting.py
+Please raise ideas for additions to this collection on the issue tracker.
 """
 
 from __future__ import annotations
@@ -28,9 +26,6 @@ from ._plotting import plot_heatmaps as _plot_heatmaps
 from ._stats import compute_stats as _compute_stats
 from ._util import SharedMemoryManager, _Array, _as_str, _batch, _tqdm, patch
 from .backtesting import Backtest, Strategy
-
-__pdoc__ = {}
-
 
 OHLCV_AGG = OrderedDict((
     ('Open', 'first'),
@@ -125,9 +120,7 @@ def plot_heatmaps(heatmap: pd.Series,
                   open_browser: bool = True):
     """
     Plots a grid of heatmaps, one for every pair of parameters in `heatmap`.
-    See example in [the tutorial].
-
-    [the tutorial]: https://kernc.github.io/backtesting.py/doc/examples/Parameter%20Heatmap%20&%20Optimization.html#plot-heatmap  # noqa: E501
+    See docs/guides/optimization.md for an example.
 
     `heatmap` is a Series as returned by
     `backtesting.backtesting.Backtest.optimize` when its parameter
@@ -570,7 +563,7 @@ class TrailingStrategy(Strategy):
         """
         assert 0 < pct < 1, 'Need pct= as rate, i.e. 5% == 0.05'
         pct_in_atr = np.mean(self.data.Close * pct / self.__atr)  # type: ignore
-        self.set_trailing_sl(pct_in_atr)
+        self.set_trailing_sl(float(pct_in_atr))
 
     def next(self):
         super().next()
@@ -636,12 +629,6 @@ class FractionalBacktest(Backtest):
                 indicator /= self._fractional_unit
 
         return result
-
-
-# Prevent pdoc3 documenting __init__ signature of Strategy subclasses
-for cls in list(globals().values()):
-    if isinstance(cls, type) and issubclass(cls, Strategy):
-        __pdoc__[f'{cls.__name__}.__init__'] = False
 
 
 class MultiBacktest:

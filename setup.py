@@ -12,11 +12,11 @@ if __name__ == '__main__':
         name='backtesting',
         description="Backtest trading strategies in Python",
         license='AGPL-3.0',
-        url='https://kernc.github.io/backtesting.py/',
+        url='https://github.com/johnswyou/backtesting.py/',
         project_urls={
-            'Documentation': 'https://kernc.github.io/backtesting.py/doc/backtesting/',
-            'Source': 'https://github.com/kernc/backtesting.py/',
-            'Tracker': 'https://github.com/kernc/backtesting.py/issues',
+            'Documentation': 'https://github.com/johnswyou/backtesting.py/tree/master/docs',
+            'Source': 'https://github.com/johnswyou/backtesting.py/',
+            'Tracker': 'https://github.com/johnswyou/backtesting.py/issues',
         },
         long_description=open(os.path.join(os.path.dirname(__file__), 'README.md'),
                               encoding='utf-8').read(),
@@ -36,13 +36,7 @@ if __name__ == '__main__':
             'bokeh >= 3.0.0, != 3.0.*, != 3.2.*',
         ],
         extras_require={
-            'doc': [
-                'pdoc3',
-                'jupytext >= 1.3',
-                'nbconvert',
-                'ipykernel',       # for nbconvert
-                'jupyter_client',  # for nbconvert
-            ],
+            'doc': [],
             'test': [
                 'matplotlib',
                 'scikit-learn',

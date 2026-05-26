@@ -11,14 +11,14 @@ body:
       value: >
         **Contributing guidelines** $\color{red}{*}$
 
-        - [x] I agree to follow this project's [Contributing Guidelines](https://github.com/kernc/backtesting.py/blob/master/CONTRIBUTING.md) which, I understand, contain short technical notes on how to best contribute to this project.
+        - [x] I agree to follow this project's [Contributing Guidelines](https://github.com/johnswyou/backtesting.py/blob/master/CONTRIBUTING.md) which, I understand, contain short technical notes on how to best contribute to this project.
 
   - type: markdown
     attributes:
       value: >+
         **Own due diligence** $\color{red}{*}$
 
-        - [x] I verify my due dilligence—I have went through the [**tutorials**](https://kernc.github.io/backtesting.py/doc/backtesting/#manuals) and the [**API docs**](https://kernc.github.io/backtesting.py/doc/backtesting/backtesting.html) and have used the [**search** on **Issues**](https://github.com/kernc/backtesting.py/issues?q=(is%3Aissue%20OR%20is%3Apr)%20) and [GitHub **Disucussions**](https://github.com/kernc/backtesting.py/discussions), as well as Google, with all the relevant search keywords to ensure this feature request hadn't been filed or answered before.
+        - [x] I verify my due dilligence—I have went through the [**guides**](https://github.com/johnswyou/backtesting.py/tree/master/docs/guides) and the [**API docs**](https://github.com/johnswyou/backtesting.py/tree/master/docs/api) and have used the [**search** on **Issues**](https://github.com/johnswyou/backtesting.py/issues?q=(is%3Aissue%20OR%20is%3Apr)%20) and [GitHub **Disucussions**](https://github.com/johnswyou/backtesting.py/discussions), as well as Google, with all the relevant search keywords to ensure this feature request hadn't been filed or answered before.
 
   - type: textarea
     id: expected

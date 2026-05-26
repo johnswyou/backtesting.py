@@ -2,4 +2,5 @@ exclude MANIFEST.in
 exclude .*
 
 recursive-exclude .* *
-recursive-exclude doc *
+
+recursive-include docs *.md

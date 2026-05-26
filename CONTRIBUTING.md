@@ -37,7 +37,7 @@ accompanied by [respective fixes/PRs].
 [bugs2]: https://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports
 [markdown]: https://www.markdownguide.org/cheat-sheet/
 [fenced code blocks]: https://www.markdownguide.org/extended-syntax/#syntax-highlighting
-[respective fixes/PRs]: https://github.com/kernc/backtesting.py/blob/master/CONTRIBUTING.md#pull-requests
+[respective fixes/PRs]: https://github.com/johnswyou/backtesting.py/blob/master/CONTRIBUTING.md#pull-requests
 
 
 Installation
@@ -47,7 +47,7 @@ first [fork the project]. Then:
 
     git clone git@github.com:YOUR_USERNAME/backtesting.py
     cd backtesting.py
-    pip install -e '.[doc,test,dev]'
+    pip install -e '.[test,dev]'
 
 [fork the project]: https://help.github.com/articles/fork-a-repo/
 
@@ -68,10 +68,11 @@ Also ensure that idiomatic code style is respected by running:
 
 Documentation
 -------------
-See _doc/README.md_. Besides Jupyter Notebook examples, all documentation
-is generated from [pdoc]-compatible markdown docstrings in code.
+See _docs/README.md_. Documentation in this fork is plain Markdown under
+_docs/_.
 
-[pdoc]: https://pdoc3.github.io/pdoc
+There is no pdoc/Jupytext/notebook documentation build. Public behavior changes
+should update the matching Markdown page in _docs/api/_ or _docs/guides/_.
 
 
 Pull requests
@@ -88,4 +89,4 @@ Please help review [existing PRs] you wish to see included.
 
 [code-review]: https://mtlynch.io/code-review-love/
 [NumPy's development workflow]: https://numpy.org/doc/stable/dev/development_workflow.html
-[existing PRs]: https://github.com/kernc/backtesting.py/pulls
+[existing PRs]: https://github.com/johnswyou/backtesting.py/pulls

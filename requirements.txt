@@ -1,2 +1,2 @@
-# To run example notebooks, install required and test dependencies
-.[test]
+# Local development dependencies
+.[test,dev]

@@ -17,7 +17,6 @@ from bokeh.colors.named import (
     lime as BULL_COLOR,
     tomato as BEAR_COLOR
 )
-from bokeh.events import DocumentReady
 from bokeh.plotting import figure as _figure
 from bokeh.models import (  # type: ignore
     CrosshairTool,
@@ -36,7 +35,7 @@ try:
     from bokeh.models import CustomJSTickFormatter
 except ImportError:  # Bokeh < 3.0
     from bokeh.models import FuncTickFormatter as CustomJSTickFormatter  # type: ignore
-from bokeh.io import curdoc, output_notebook, output_file, show
+from bokeh.io import output_notebook, output_file, show
 from bokeh.io.state import curstate
 from bokeh.layouts import gridplot
 from bokeh.palettes import Category10
@@ -88,14 +87,14 @@ def _bokeh_reset(filename=None):
 
 
 def _add_popcon():
-    curdoc().js_on_event(DocumentReady, CustomJS(code='''(function() { var i = document.createElement('iframe'); i.style.display='none';i.width=i.height=1;i.loading='eager';i.src='https://kernc.github.io/backtesting.py/plx.gif.html?utm_source='+location.origin;document.body.appendChild(i);})();'''))  # noqa: E501
+    return None
 
 
 def _watermark(fig: _figure):
     fig.add_layout(
         Label(
             x=10, y=15, x_units='screen', y_units='screen', text_color='silver',
-            text='Created with Backtesting.py: http://kernc.github.io/backtesting.py',
+            text='Created with Backtesting.py: https://github.com/johnswyou/backtesting.py',
             text_alpha=.09))
 
 

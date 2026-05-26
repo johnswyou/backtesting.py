@@ -3,7 +3,6 @@ exclude = [
     '.git',
     '.eggs',
     '__pycache__',
-    'doc/examples',
 ]
 ignore = [
     'UP006',

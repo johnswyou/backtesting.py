@@ -167,6 +167,7 @@ def _merged_symbols(*values):
 def _symbol_from_symbols(symbols):
     return next(iter(symbols)) if len(symbols) == 1 else None
 
+
 def _strategy_indicators(strategy):
     return ((path, indicator)
             for path, indicator, _ in _strategy_indicator_specs(strategy))

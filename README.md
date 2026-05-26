@@ -1,57 +1,53 @@
-[![](https://i.imgur.com/E8Kj69Y.png)](https://kernc.github.io/backtesting.py/)
+# Backtesting.py
 
-Backtesting.py
-==============
-[![Build Status](https://img.shields.io/github/actions/workflow/status/kernc/backtesting.py/ci.yml?branch=master&style=for-the-badge)](https://github.com/kernc/backtesting.py/actions)
-[![Code Coverage](https://img.shields.io/codecov/c/gh/kernc/backtesting.py.svg?style=for-the-badge&label=Covr)](https://codecov.io/gh/kernc/backtesting.py)
-[![Source lines of code](https://img.shields.io/endpoint?url=https%3A%2F%2Fghloc.vercel.app%2Fapi%2Fkernc%2Fbacktesting.py%2Fbadge?filter=.py%26format=human&style=for-the-badge&label=SLOC&color=green)](https://ghloc.vercel.app/kernc/backtesting.py)
-[![Backtesting on PyPI](https://img.shields.io/pypi/v/backtesting.svg?color=blue&style=for-the-badge)](https://pypi.org/project/backtesting)
-[![PyPI downloads](https://img.shields.io/pypi/dd/backtesting.svg?style=for-the-badge&label=D/L&color=skyblue)](https://pypistats.org/packages/backtesting)
-[![Total downloads](https://img.shields.io/pepy/dt/backtesting?style=for-the-badge&label=%E2%88%91&color=skyblue)](https://pypistats.org/packages/backtesting)
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/kernc?color=pink&style=for-the-badge&label=%E2%99%A5)](https://github.com/sponsors/kernc)
+Backtest trading strategies in Python.
 
-Backtest trading strategies with Python.
+This fork keeps documentation as plain Markdown in [docs/](docs/README.md), with an [agent guide](docs/agent-guide.md), [project map](docs/project-map.md), handwritten [API reference](docs/api/README.md), and user [guides](docs/guides/quick-start.md).
 
-[**Project website**](https://kernc.github.io/backtesting.py) + [Documentation] &nbsp;&nbsp;|&nbsp; [YouTube]
+## Installation
 
-[Documentation]: https://kernc.github.io/backtesting.py/doc/backtesting/
-[YouTube]: https://www.youtube.com/results?q=%22backtesting.py%22
+```bash
+pip install backtesting
+```
 
-Installation
-------------
+For local development from this repository:
 
-    $ pip install backtesting
+```bash
+pip install -e ".[test,dev]"
+```
 
+## Usage
 
-Usage
------
 ```python
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
-
 from backtesting.test import SMA, GOOG
 
 
 class SmaCross(Strategy):
+    fast = 10
+    slow = 30
+
     def init(self):
         price = self.data.Close
-        self.ma1 = self.I(SMA, price, 10)
-        self.ma2 = self.I(SMA, price, 20)
+        self.ma1 = self.I(SMA, price, self.fast)
+        self.ma2 = self.I(SMA, price, self.slow)
 
     def next(self):
         if crossover(self.ma1, self.ma2):
+            self.position.close()
             self.buy()
         elif crossover(self.ma2, self.ma1):
+            self.position.close()
             self.sell()
 
 
-bt = Backtest(GOOG, SmaCross, commission=.002,
-              exclusive_orders=True)
+bt = Backtest(GOOG, SmaCross, commission=.002, exclusive_orders=True)
 stats = bt.run()
 bt.plot()
 ```
 
-Results in:
+Example result shape:
 
 ```text
 Start                     2004-08-19 00:00:00
@@ -85,41 +81,39 @@ Profit Factor                            2.13
 Expectancy [%]                           6.91
 SQN                                      1.78
 Kelly Criterion                        0.6134
-_strategy              SmaCross(n1=10, n2=20)
+_strategy              SmaCross(fast=10,slow=30)
 _equity_curve                          Equ...
 _trades                       Size  EntryB...
 dtype: object
 ```
-[![plot of trading simulation](https://i.imgur.com/xRFNHfg.png)](https://kernc.github.io/backtesting.py/#example)
 
-Find more usage examples in the [documentation].
+## Documentation
 
+- [Documentation index](docs/README.md)
+- [Quick start](docs/guides/quick-start.md)
+- [Backtest API](docs/api/backtest.md)
+- [PortfolioBacktest API](docs/api/portfolio-backtest.md)
+- [Architecture](docs/architecture.md)
+- [Agent guide](docs/agent-guide.md)
 
-Features
---------
-* Simple, well-documented API
-* Blazing fast execution
-* Built-in optimizer
-* Library of composable base strategies and utilities
-* Indicator-library-agnostic
-* Supports _any_ financial instrument with candlestick data
-* Detailed results
-* Interactive visualizations
+Documentation is Markdown-only in this fork. There is no generated documentation build step.
 
-![xkcd.com/1570](https://imgs.xkcd.com/comics/engineer_syllogism.png)
+## Features
 
+- Simple strategy API
+- Single-asset and shared-cash multi-asset backtesting
+- Built-in parameter optimization
+- Reusable strategy helpers
+- Detailed statistics
+- Interactive Bokeh visualizations
 
-Bugs
-----
-Before reporting bugs or posting to the
-[discussion board](https://github.com/kernc/backtesting.py/discussions),
-please read [contributing guidelines](CONTRIBUTING.md), particularly the section
-about crafting useful bug reports and ```` ``` ````-fencing your code. We thank you!
+## Tests
 
+```bash
+python -m backtesting.test
+python -m unittest backtesting.test._test.TestDocs
+```
 
-Alternatives
-------------
-See [alternatives.md] for a list of alternative Python
-backtesting frameworks and related packages.
+## Alternatives
 
-[alternatives.md]: https://github.com/kernc/backtesting.py/blob/master/doc/alternatives.md
+See [docs/alternatives.md](docs/alternatives.md).
