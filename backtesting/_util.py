@@ -296,6 +296,48 @@ class _SeriesName(str):
         return obj
 
 
+class _BacktestingSeries(pd.Series):
+    """Pandas Series subclass that preserves backtesting symbol metadata."""
+
+    @property
+    def _constructor(self):
+        return _BacktestingSeries
+
+    @property
+    def _constructor_expanddim(self):
+        return _BacktestingDataFrame
+
+    def _arith_method(self, other, op):
+        result = super()._arith_method(other, op)
+        return _finalize_pandas_metadata(result, self, other)
+
+
+class _BacktestingDataFrame(pd.DataFrame):
+    """Pandas DataFrame subclass that returns metadata-aware series slices."""
+
+    @property
+    def _constructor(self):
+        return _BacktestingDataFrame
+
+    @property
+    def _constructor_sliced(self):
+        return _BacktestingSeries
+
+
+def _finalize_pandas_metadata(result, *sources):
+    if not isinstance(result, pd.Series) or result.name is None:
+        return result
+
+    symbols = _merged_symbols(*sources)
+    if not symbols:
+        return result
+
+    name = str(result.name)
+    result.name = _backtesting_series_name(name, symbols=symbols)
+    _apply_backtesting_attrs(result, symbols=symbols)
+    return result
+
+
 class _Array(np.ndarray):
     """
     ndarray extended to supply .name and other arbitrary properties
@@ -382,7 +424,7 @@ class _Array(np.ndarray):
         index = self._opts['index'][:values.shape[1]]
         name = (_SeriesName(self.name, self._opts)
                 if isinstance(self.name, str) else self.name)
-        series = pd.Series(values[0], index=index, name=name)
+        series = _BacktestingSeries(values[0], index=index, name=name)
         series.attrs['backtesting.symbol'] = self._opts.get('symbol')
         series.attrs['backtesting.symbols'] = self._opts.get('symbols')
         return series
@@ -394,7 +436,7 @@ class _Array(np.ndarray):
         column_name = _backtesting_series_name(self.name,
                                                symbol=self._opts.get('symbol'),
                                                symbols=self._opts.get('symbols'))
-        df = pd.DataFrame(values.T, index=index, columns=[column_name] * len(values))
+        df = _BacktestingDataFrame(values.T, index=index, columns=[column_name] * len(values))
         _apply_backtesting_attrs(df,
                                  symbol=self._opts.get('symbol'),
                                  symbols=self._opts.get('symbols'))
@@ -413,7 +455,9 @@ class _Data:
     for performance reasons.
     """
     def __init__(self, df: pd.DataFrame, *, symbol=None):
-        self.__df = df
+        self.__df = df.copy(deep=False)
+        if not isinstance(self.__df, _BacktestingDataFrame):
+            self.__df.__class__ = _BacktestingDataFrame
         self.__symbol = symbol
         self.__len = len(df)  # Current length
         self.__pip: Optional[float] = None
@@ -559,7 +603,8 @@ class _MultiData:
 
     @property
     def df(self) -> pd.DataFrame:
-        return pd.concat({symbol: data.df for symbol, data in self.__data.items()}, axis=1)
+        return _BacktestingDataFrame(
+            pd.concat({symbol: data.df for symbol, data in self.__data.items()}, axis=1))
 
 
 if sys.version_info >= (3, 13):
