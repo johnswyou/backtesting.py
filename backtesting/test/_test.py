@@ -1,15 +1,13 @@
 import inspect
 import multiprocessing as mp
 import os
+import re
 import sys
 import time
-import unittest
 import warnings
 from concurrent.futures.process import ProcessPoolExecutor
 from contextlib import contextmanager
-from glob import glob
-from runpy import run_path
-from tempfile import NamedTemporaryFile, gettempdir
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
 import numpy as np
@@ -43,16 +41,6 @@ def _tempfile():
         if sys.platform.startswith('win'):
             f.close()
         yield f.name
-
-
-@contextmanager
-def chdir(path):
-    cwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(cwd)
 
 
 class SmaCross(Strategy):
@@ -2646,23 +2634,72 @@ class TestUtil(TestCase):
 
 
 class TestDocs(TestCase):
-    DOCS_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'doc')
+    REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    DOCS_DIR = os.path.join(REPO_ROOT, 'docs')
+    MARKDOWN_LINK_RE = re.compile(r'(?<!!)\[[^\]]+\]\(([^)]+)\)')
 
-    @unittest.skipUnless(os.path.isdir(DOCS_DIR), "docs dir doesn't exist")
-    @unittest.skipUnless(sys.platform.startswith('linux'), "test_examples requires mp.start_method=fork")
-    def test_examples(self):
-        import backtesting
-        examples_root = os.path.join(self.DOCS_DIR, 'examples')
-        examples = glob(os.path.join(examples_root, '**', '*.py'), recursive=True)
-        self.assertGreaterEqual(len(examples), 4)
-        self.assertIn(os.path.join(examples_root, 'Multi Asset Trading',
-                                   'Bollinger Band Portfolio.py'),
-                      examples)
-        with chdir(gettempdir()), \
-                patch(backtesting, 'Pool', mp.get_context('fork').Pool):
-            for file in examples:
-                with self.subTest(example=os.path.relpath(file, examples_root)):
-                    run_path(file)
+    def _markdown_files(self):
+        files = []
+        for root, _dirs, names in os.walk(self.DOCS_DIR):
+            for name in names:
+                if name.endswith('.md'):
+                    files.append(os.path.join(root, name))
+        return sorted(files)
+
+    def test_markdown_docs_exist(self):
+        required = [
+            'README.md',
+            'agent-guide.md',
+            'project-map.md',
+            'architecture.md',
+            os.path.join('api', 'README.md'),
+            os.path.join('api', 'backtest.md'),
+            os.path.join('api', 'portfolio-backtest.md'),
+            os.path.join('guides', 'quick-start.md'),
+            os.path.join('guides', 'multi-asset-portfolio.md'),
+        ]
+        for relpath in required:
+            with self.subTest(doc=relpath):
+                self.assertTrue(os.path.isfile(os.path.join(self.DOCS_DIR, relpath)))
+
+    def test_markdown_docs_have_titles(self):
+        for file in self._markdown_files():
+            with self.subTest(doc=os.path.relpath(file, self.REPO_ROOT)):
+                with open(file, encoding='utf-8') as f:
+                    first_line = f.readline()
+                self.assertRegex(first_line, r'^# .+')
+
+    def test_markdown_links_resolve(self):
+        markdown_files = self._markdown_files() + [
+            os.path.join(self.REPO_ROOT, 'README.md'),
+            os.path.join(self.REPO_ROOT, 'CONTRIBUTING.md'),
+        ]
+        for file in markdown_files:
+            with open(file, encoding='utf-8') as f:
+                text = f.read()
+            for match in self.MARKDOWN_LINK_RE.finditer(text):
+                target = match.group(1).split()[0]
+                if (target.startswith('#') or
+                        '://' in target or
+                        target.startswith('mailto:') or
+                        target.startswith('data:')):
+                    continue
+                target_path = target.split('#', 1)[0]
+                if not target_path:
+                    continue
+                resolved = os.path.normpath(os.path.join(os.path.dirname(file), target_path))
+                with self.subTest(source=os.path.relpath(file, self.REPO_ROOT), target=target):
+                    self.assertTrue(os.path.exists(resolved), resolved)
+
+    def test_old_generated_docs_entrypoints_removed(self):
+        old_paths = [
+            os.path.join('doc', 'build.sh'),
+            os.path.join('.github', 'deploy-gh-pages.sh'),
+            os.path.join('.github', 'workflows', 'deploy-docs.yml'),
+        ]
+        for relpath in old_paths:
+            with self.subTest(path=relpath):
+                self.assertFalse(os.path.exists(os.path.join(self.REPO_ROOT, relpath)))
 
     def test_backtest_run_docstring_contains_stats_keys(self):
         stats = Backtest(SHORT_DATA, SmaCross).run()
