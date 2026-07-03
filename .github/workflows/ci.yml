@@ -59,7 +59,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 3
-      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      # `|| true`: a fork may not have upstream's tags;
+      # setuptools_scm then falls back to a dev version
+      - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/* || true
       - run: pip install -e .[doc,test]  # -e provides ./backtesting/_version.py for pdoc
       - run: time doc/build.sh
 
