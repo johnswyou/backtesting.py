@@ -866,7 +866,11 @@ class _Broker:
         self._cash = cash
 
         if callable(commission):
-            self._commission = self._symbol_aware(commission)
+            # In single-asset mode, always call user callables with two args,
+            # exactly as before multi-asset support
+            self._commission = (
+                self._symbol_aware(commission) if self._symbols else
+                lambda order_size, price, _symbol=None: commission(order_size, price))
         else:
             try:
                 self._commission_fixed, self._commission_relative = commission
@@ -905,9 +909,10 @@ class _Broker:
         """
         Adapt a user `commission` callable to a uniform 3-arg
         `func(order_size, price, symbol)` call convention. The symbol is only
-        passed to callables that explicitly accept it — a third _required_
-        positional parameter or a parameter named 'symbol' — so legacy 2-arg
-        callables (even with extra defaulted parameters) work unchanged.
+        passed to callables that explicitly accept it — three _required_
+        positional parameters, or a parameter named 'symbol' declared after
+        `price` (then passed by keyword) — so legacy 2-arg callables
+        (even with extra defaulted parameters) work unchanged.
         """
         try:
             params = list(signature(commission_func).parameters.values())
@@ -917,11 +922,11 @@ class _Broker:
             positional = [p for p in params
                           if p.kind in (Parameter.POSITIONAL_ONLY,
                                         Parameter.POSITIONAL_OR_KEYWORD)]
-            if (sum(p.default is Parameter.empty for p in positional) >= 3 or
-                    any(p.name == 'symbol' for p in positional[2:])):
+            if sum(p.default is Parameter.empty for p in positional) >= 3:
                 return commission_func
-            if any(p.name == 'symbol' and p.kind is Parameter.KEYWORD_ONLY
-                   for p in params):
+            if any(p.name == 'symbol' and p.kind in (Parameter.POSITIONAL_OR_KEYWORD,
+                                                     Parameter.KEYWORD_ONLY)
+                   for p in params[2:]):
                 return lambda order_size, price, symbol=None: \
                     commission_func(order_size, price, symbol=symbol)
         return lambda order_size, price, symbol=None: commission_func(order_size, price)
@@ -1439,10 +1444,11 @@ class Backtest:
     `func(order_size: int, price: float) -> float`
     (note, order size is negative for short orders),
     which can be used to model more complex commission structures.
-    In a multi-asset backtest, a callable that declares a third
-    parameter named `symbol` (or three required positional parameters)
-    is called as `func(order_size, price, symbol)`, allowing
-    per-asset fee schedules.
+    In a multi-asset backtest, a callable that declares a parameter
+    named `symbol` after `price` (passed by keyword), or three required
+    positional parameters, also receives the symbol of the order being
+    filled, allowing per-asset fee schedules. In single-asset mode,
+    callables are always called with two arguments.
     Negative commission values are interpreted as market-maker's rebates.
 
     .. note::

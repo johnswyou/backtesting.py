@@ -26,7 +26,7 @@ import pandas as pd
 from ._plotting import plot_heatmaps as _plot_heatmaps
 from ._stats import compute_stats as _compute_stats
 from ._util import SharedMemoryManager, _Array, _as_str, _batch, _tqdm, patch
-from .backtesting import Backtest, Strategy
+from .backtesting import Backtest, Strategy, _multiasset_df
 
 __pdoc__ = {}
 
@@ -182,7 +182,8 @@ def compute_stats(
 
     `stats` is the statistics series as returned by `backtesting.backtesting.Backtest.run()`.
     `data` is OHLC data as passed to the `backtesting.backtesting.Backtest`
-    the `stats` were obtained in.
+    the `stats` were obtained in (in multi-asset mode, the dict of data
+    frames or the equivalent two-level-column data frame).
     `trades` can be a dataframe subset of `stats._trades` (e.g. only long trades).
     You can also tune `risk_free_rate`, used in calculation of Sharpe and Sortino ratios.
 
@@ -191,6 +192,8 @@ def compute_stats(
         >>> long_stats = compute_stats(stats=stats, trades=only_long_trades,
         ...                            data=GOOG, risk_free_rate=.02)
     """
+    if isinstance(data, dict):
+        data = _multiasset_df(data)
     equity = stats._equity_curve.Equity
     if trades is None:
         trades = stats._trades

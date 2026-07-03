@@ -15,8 +15,9 @@ These were the major changes contributing to each release:
   orders on such bars wait for the symbol's next traded bar. Single-asset behavior
   is unchanged.
 * Indicators stored in a flat dict/list/tuple strategy attribute are now, like
-  plain indicator attributes, auto-sliced in `Strategy.next()` (a container mixing
-  indicators with other values raises an error), preventing accidental look-ahead.
+  plain indicator attributes, auto-sliced in `Strategy.next()` and counted
+  toward the indicator warm-up period (a container mixing indicators with
+  other values raises an error), preventing accidental look-ahead.
   `symbol` joins `name`/`plot`/`overlay`/`color`/`scatter` as a reserved
   `Strategy.I()` keyword (no longer forwarded to the indicator function).
 * A `commission` callable declaring a third parameter named `symbol` (or three

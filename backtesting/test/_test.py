@@ -1887,6 +1887,10 @@ class TestMultiAsset(TestCase):
         stats_a = compute_stats(stats=stats, trades=trades_a,
                                 data=pd.concat({'A': df, 'B': df * 2}, axis=1))
         self.assertEqual(stats_a['# Trades'], len(trades_a))
+        # The dict form, as passed to Backtest, works too
+        stats_a2 = compute_stats(stats=stats, trades=trades_a,
+                                 data={'A': df, 'B': df * 2})
+        self.assertEqual(stats_a2['# Trades'], len(trades_a))
 
     # Finalization ###########################################################
 
@@ -1976,6 +1980,13 @@ class TestMultiAsset(TestCase):
                          finalize_trades=True).run()
         self.assertGreater(stats._trades['Commission'].iloc[0], 0)
 
+        # Single-asset mode always calls with two args, whatever the signature
+        def commission_named_symbol(order_size, price, symbol='UNTOUCHED'):
+            assert symbol == 'UNTOUCHED', symbol
+            return 0.
+
+        Backtest(SHORT_DATA, BuyOnce, commission=commission_named_symbol).run()
+
         # Keyword-only `symbol` param receives the symbol in multi-asset mode
         seen = []
 
@@ -1992,6 +2003,20 @@ class TestMultiAsset(TestCase):
         dfs = {s: self._df([10, 11, 12, 13], idx) for s in 'AB'}
         Backtest(dfs, BuyA, commission=commission_kwonly, finalize_trades=True).run()
         self.assertEqual(set(seen), {'A'})
+
+        # A defaulted `symbol` param after other defaulted params is passed
+        # by keyword, leaving the other defaults untouched
+        seen.clear()
+        fees = []
+
+        def commission_late_symbol(order_size, price, fee_rate=.5, symbol=None):
+            seen.append(symbol)
+            fees.append(fee_rate)
+            return 0.
+
+        Backtest(dfs, BuyA, commission=commission_late_symbol, finalize_trades=True).run()
+        self.assertEqual(set(seen), {'A'})
+        self.assertEqual(set(fees), {.5})
 
         # *args callables keep the legacy 2-arg convention
         def commission_varargs(*args):
