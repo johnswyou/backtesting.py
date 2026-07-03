@@ -67,8 +67,10 @@ fi
 echo
 echo 'Testing for broken links'
 echo
+# URLs (-prefixes) of sites that block CI requests are exempted
 problematic_urls='
 https://www.gnu.org/licenses/agpl-3.0.html
+https://www.investopedia.com/
 '
 pushd "$BUILDROOT" >/dev/null
 WEBSITE='https://kernc\.github\.io/backtesting\.py'
@@ -101,7 +103,7 @@ print(html.unescape(unquote(sys.argv[-1])))' "$url")"
             echo "$url"
             curl --silent --fail --retry 2 --retry-delay 2 --connect-timeout 10 \
                     --user-agent 'Mozilla/5.0 Firefox 128' "$url" >/dev/null 2>&1 ||
-                grep -qF "$url" <(echo "$problematic_urls") ||
+                grep -qF -f <(grep . <<<"$problematic_urls") <<<"$url" ||
                 die "broken link in $file:  $url"
         done
     done
