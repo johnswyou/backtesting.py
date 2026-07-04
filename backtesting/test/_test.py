@@ -2025,6 +2025,87 @@ class TestMultiAsset(TestCase):
 
         Backtest(SHORT_DATA, BuyOnce, commission=commission_varargs).run()
 
+        # ... unless they declare a keyword-only `symbol`
+        seen.clear()
+
+        def commission_varargs_symbol(*args, symbol=None):
+            seen.append(symbol)
+            return 0.
+
+        Backtest(dfs, BuyA, commission=commission_varargs_symbol,
+                 finalize_trades=True).run()
+        self.assertEqual(set(seen), {'A'})
+
+    def test_results_picklable_with_callable_commission(self):
+        import pickle
+
+        class BuyOnce(_S):
+            def next(self):
+                if len(self.data) == 2:
+                    self.buy(size=1)
+
+        stats = Backtest(SHORT_DATA, BuyOnce, commission=_module_level_commission,
+                         finalize_trades=True).run()
+        # The commission adapter (reachable from run() results, pickled by
+        # optimize() into workers) must be as picklable as the callable itself
+        pickle.loads(pickle.dumps(stats._strategy._broker._commission))
+
+        class BuyOnceA(_S):
+            def next(self):
+                if len(self.data) == 2:
+                    self.buy(symbol='A', size=1)
+
+        stats = Backtest({'A': SHORT_DATA, 'B': SHORT_DATA},
+                         BuyOnceA, commission=_module_level_commission,
+                         finalize_trades=True).run()
+        pickle.loads(pickle.dumps(stats._strategy._broker._commission))
+
+    def test_optimize_after_run_with_callable_commission(self):
+        bt = Backtest(GOOG.iloc[:100], SmaCross, commission=_module_level_commission)
+        bt.run()  # Populates bt._results, which optimize() pickles into workers
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            stats = bt.optimize(fast=[5, 10], slow=[15, 25])
+        self.assertGreater(stats['# Trades'], 0)
+
+    def test_plot_symbol_without_drawdown_sample(self):
+        idx = self._index(8)
+        # B delists at bar 3; the account's only drawdown happens afterwards,
+        # so no drawdown ends on B's traded bars
+        a = self._df([10, 10, 10, 10, 20, 5, 5, 5], idx)
+        b = self._df([20, 21, 22, 23] + [np.nan] * 4, idx)
+
+        class S(_S):
+            def next(self):
+                if len(self.data) == 2:
+                    self.buy(symbol='A', size=1)
+                    self.buy(symbol='B', size=1)
+
+        bt = Backtest({'A': a, 'B': b}, S, finalize_trades=True)
+        stats = bt.run()
+        for symbol in ('A', 'B'):
+            with _tempfile() as f:
+                bt.plot(results=stats, symbol=symbol, filename=f,
+                        open_browser=False)
+                self.assertLess(100, os.path.getsize(f))
+
+    def test_plot_no_drawdown(self):
+        # Monotonically profitable backtest: all-NaN drawdown durations
+        # crashed on pandas 3
+        idx = self._index(8)
+        a = self._df(np.r_[10:18.], idx)
+
+        class S(_S):
+            def next(self):
+                if len(self.data) == 2:
+                    self.buy(size=1)
+
+        bt = Backtest(a, S, finalize_trades=True)
+        stats = bt.run()
+        with _tempfile() as f:
+            bt.plot(results=stats, filename=f, open_browser=False)
+            self.assertLess(100, os.path.getsize(f))
+
     def test_settlement_equity_includes_commissions(self):
         idx = self._index(6)
         a = self._df([10.] * 6, idx)
@@ -2089,6 +2170,10 @@ class TestMultiAsset(TestCase):
                         self.positions['A'] = None
 
         Backtest({'A': SHORT_DATA}, S).run()
+
+
+def _module_level_commission(order_size, price):
+    return abs(order_size) * price * .002
 
 
 class _PortfolioSmaCross(Strategy):

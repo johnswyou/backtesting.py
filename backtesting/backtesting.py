@@ -26,7 +26,7 @@ import pandas as pd
 from numpy.random import default_rng
 
 from ._plotting import plot  # noqa: I001
-from ._stats import compute_stats, dummy_stats
+from ._stats import compute_drawdown_duration_peaks, compute_stats, dummy_stats
 from ._util import (
     SharedMemoryManager, _as_str, _Indicator, _Data, _batch, _data_period,
     _indicator_sliced, _indicator_warmup_nbars, _strategy_indicators, patch, try_, _tqdm,
@@ -181,7 +181,7 @@ class Strategy(metaclass=ABCMeta):
         if not is_arraylike or not 1 <= value.ndim <= 2 or value.shape[-1] != len(self._data):
             raise ValueError(
                 'Indicators must return (optionally a tuple of) numpy.arrays of same '
-                f'length as `data` (data length: {len(self._data)}; indicator "{name}" '
+                f'length as `data` (data shape: {(len(self._data),)}; indicator "{name}" '
                 f'shape: {getattr(value, "shape", "")}, returned value: {value})')
 
         if overlay is None and np.issubdtype(value.dtype, np.number):
@@ -418,7 +418,9 @@ class Position:
     """
     Currently held asset position, available as
     `backtesting.backtesting.Strategy.position` within
-    `backtesting.backtesting.Strategy.next`.
+    `backtesting.backtesting.Strategy.next`
+    (in a multi-asset backtest, as `self.positions[symbol]`;
+    see `backtesting.backtesting.Strategy.positions`).
     Can be used in boolean contexts, e.g.
 
         if self.position:
@@ -488,6 +490,21 @@ class _Positions(dict):
         suggestions = get_close_matches(str(key), map(str, self))
         hint = f" Did you mean: {', '.join(map(repr, suggestions))}?" if suggestions else ''
         raise KeyError(f'Unknown symbol {key!r}; symbols: {tuple(self)}.{hint}')
+
+
+class _CommissionAdapter:
+    """
+    Call a user `commission` callable with or without the symbol argument.
+    A module-level class rather than a closure, keeping brokers (and thus
+    e.g. `Backtest.run` results) as picklable as the callable itself.
+    """
+    def __init__(self, func: Callable, *, with_symbol: bool):
+        self._func = func
+        self._with_symbol = with_symbol
+
+    def __call__(self, order_size, price, symbol=None):
+        return (self._func(order_size, price, symbol=symbol) if self._with_symbol else
+                self._func(order_size, price))
 
 
 class Order:
@@ -870,7 +887,7 @@ class _Broker:
             # exactly as before multi-asset support
             self._commission = (
                 self._symbol_aware(commission) if self._symbols else
-                lambda order_size, price, _symbol=None: commission(order_size, price))
+                _CommissionAdapter(commission, with_symbol=False))
         else:
             try:
                 self._commission_fixed, self._commission_relative = commission
@@ -924,12 +941,12 @@ class _Broker:
                                         Parameter.POSITIONAL_OR_KEYWORD)]
             if sum(p.default is Parameter.empty for p in positional) >= 3:
                 return commission_func
-            if any(p.name == 'symbol' and p.kind in (Parameter.POSITIONAL_OR_KEYWORD,
-                                                     Parameter.KEYWORD_ONLY)
-                   for p in params[2:]):
-                return lambda order_size, price, symbol=None: \
-                    commission_func(order_size, price, symbol=symbol)
-        return lambda order_size, price, symbol=None: commission_func(order_size, price)
+            if (any(p.name == 'symbol' and p.kind is Parameter.KEYWORD_ONLY
+                    for p in params) or
+                    any(p.name == 'symbol' and p.kind is Parameter.POSITIONAL_OR_KEYWORD
+                        for p in positional[2:])):
+                return _CommissionAdapter(commission_func, with_symbol=True)
+        return _CommissionAdapter(commission_func, with_symbol=False)
 
     def __repr__(self):
         return f'<Broker: {self._cash:.0f}{self.position.pl:+.1f} ({len(self.trades)} trades)>'
@@ -2114,7 +2131,13 @@ class Backtest:
                 np.searchsorted(valid, trades[['EntryBar', 'ExitBar']], side='right') - 1)
             results = results.copy()
             results['_trades'] = trades
-            results['_equity_curve'] = results['_equity_curve'][mask]
+            # Recompute (vs. slice) drawdowns, so they are self-consistent
+            # with the sampled equity
+            equity = results['_equity_curve']['Equity'][mask]
+            dd = 1 - equity / np.maximum.accumulate(equity)
+            dd_dur, _ = compute_drawdown_duration_peaks(dd)
+            results['_equity_curve'] = pd.DataFrame(
+                {'Equity': equity, 'DrawdownPct': dd, 'DrawdownDuration': dd_dur})
             indicators = [_Indicator(np.asarray(indicator)[..., mask],
                                      **dict(indicator._opts, name=indicator.name,
                                             index=df.index))

@@ -325,7 +325,8 @@ return this.labels[index] || "";
         """Equity section"""
         # Max DD Dur. line
         equity = equity_data['Equity'].copy()
-        dd_end = equity_data['DrawdownDuration'].idxmax()
+        # All-NaN series (no drawdown) raises on pandas 3
+        dd_end = try_(equity_data['DrawdownDuration'].idxmax, np.nan, ValueError)
         if np.isnan(dd_end):
             dd_start = dd_end = equity.index[0]
         else:

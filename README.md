@@ -123,8 +123,9 @@ bt.plot(symbol='AAPL')
 
 Assets may follow different calendars (e.g. crypto vs. equities, later
 IPOs); data is aligned on the union of timestamps, prices are never
-forward-filled, and orders for an asset simply wait until the asset's
-next traded bar. See the `Backtest` documentation for details.
+forward-filled, and pending orders for an asset simply wait until its
+next traded bar (before an asset's first-ever bar, only limit/stop
+orders can be placed). See the `Backtest` documentation for details.
 
 
 Features
